@@ -127,3 +127,10 @@ drop.init();
 ```
 
 **See [documentation.md](/documentation.md) for more details about all possible class settings, methods, and fields.**
+
+## Licence
+This software is derived from W3C patterns in the [W3C WAI Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/patterns/).
+
+It is licensed according to the [W3C Software License](https://www.w3.org/Consortium/Legal/2015/copyright-software-and-document).
+
+Copyright © 2022 W3C® (MIT, ERCIM, Keio, Beihang)
