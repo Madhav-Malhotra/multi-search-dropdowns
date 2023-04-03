@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Drop V2</title>
+    <link rel="stylesheet" href="/madhav/reusabledrop2/drop.css" type="text/css" />
+</head>
+<body>
+    <script src='/madhav/reusabledrop2/drop.js' type='module'></script>
+    <script type='module'>
+        import { Dropdown } from '/madhav/reusabledrop2/drop.js' 
+        console.log(Dropdown)
+        
+        const drop = new Dropdown();
+        let dropdownNames = {
+            "Chemical_Group": "Chemical Group",
+            "Chemical": "Chemical (Name)",
+            "Chemical_CAS": "Chemical (CASRN)",
+            "Biomarker": "Biomarker (Name)",
+            "Matrix": "Matrix",
+            "Units": "Units",
+            "Age_Range": "Age range",
+            "CHMS_Cycle_Years": "CHMS cycle (years)",
+            "Data_Type": "Data type"
+        };
+        const filterData = {
+            "Chemical_Group":["acrylamide","chlorophenols","dioxins and furans"],
+            "Chemical":["acrylamide","glycidamide","2,4-dichlorophenol (2,4-DCP)","2,5-dichlorophenol (2,5-DCP)","2,4,5-trichlorophenol (2,4,5-TCP)","2,4,6-trichlorophenol (2,4,6-TCP)","pentachlorophenol (PCP)","2,3,7,8-tetrachlorodibenzofuran (TCDF)","2,3,7,8-tetrachlorodibenzo-p-dioxin (TCDD)","1,2,3,7,8-pentachlorodibenzofuran (PeCDF)","1,2,3,7,8-pentachlorodibenzo-p-dioxin (PeCDD)","2,3,4,7,8-pentachlorodibenzofuran (PeCDF)","1,2,3,4,7,8-hexachlorodibenzofuran (HxCDF)","1,2,3,4,7,8-hexachlorodibenzo-p-dioxin (HxCDD)","1,2,3,6,7,8-hexachlorodibenzofuran (HxCDF)"],
+            "Chemical_CAS":["100-41-5","111-71-7","142-82-5","67-72-1","107-46-0","66-25-1","110-54-3","98-82-8","5989-27-5","93-58-3","106-70-7","98-95-3","75-52-5","124-19-6","111-84-2","143-08-8","556-67-2","107-51-7","124-13-0","111-65-9 ","111-87-5","76-01-7","109-66-0"," 96-22-0","127-18-4","80-56-8","91-22-5","100-42-5","109-99-9","108-88-3","75-25-2","79-01-6","67-66-3","1120-21-4","1330-20-7"],
+            "Biomarker":["mono-carboxy-n-heptyl phthalate (MCHpP)","mono-n-octyl phthalate (MOP)","mono-3-carboxypropyl phthalate (MCPP)","2,2',5-trichlorobiphenyl (PCB 18)","2,4,4'-trichlorobiphenyl (PCB 28)","2,2',4,5'-tetrachlorobiphenyl (PCB 49)","2,2',5,5'-tetrachlorobiphenyl (PCB 52)","2,3',4,4'-tetrachlorobiphenyl (PCB 66)","2,4,4',5-tetrachlorobiphenyl (PCB 74)"],
+            "Matrix":["blood"],//,"urine","pooled serum","plasma","hair","red blood cells","tap water","serum","indoor air"],
+            "Units":["NA","pmol/g Hb","µg/L","µg/g creatinine","pg/g lipid","pg/g serum","ng/g lipid","ng/g serum","µg As/L","mg/L","µg/dL","pg TEQ/g lipid"],
+            "CHMS_Cycle_Years":["3 (2012-2013)"]//,"4 (2014-2015)","5 (2016-2017)","6 (2018-2019)","1 (2007-2009)","2 (2009-2011)"]
+        }
+        
+        
+        const initData = [
+            {
+              'sectionID': 'all-section',
+              'sectionOrder': 0,
+              'dropIDs': Object.keys(filterData),
+              'dropTitles': Object.keys(filterData).map(k => dropdownNames[k]),
+              'dropOrder': [0, 0, 0, 0, 0, 0, 0],
+              'dropOptions': Object.values(filterData),
+              'dropMulti': [false, true, true, true, false, false, true],
+              'dropSearch': [true, true, true, true, false, false, false],
+              'dropInit': [false, false, false, false, false, false, false]
+            }
+        ];
+        
+        drop.rootDOM = document.body;
+        drop.sections = initData;
+        drop.onStateUpdate = (v) => {
+            console.log(v)
+        }
+        drop.init();
+
+    </script>
+</body>
+</html>
