@@ -129,7 +129,7 @@ drop.init();
 **See [documentation.md](/documentation.md) for more details about all possible class settings, methods, and fields.**
 
 ## Licence
-This software is derived from W3C patterns in the [W3C WAI Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/patterns/).
+This software is derived from patterns by the World-Wide-Web Consortium (W3C) in the [W3C Web Accessibility Initiative Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/patterns/).
 
 It is licensed according to the [W3C Software License](https://www.w3.org/Consortium/Legal/2015/copyright-software-and-document).
 
