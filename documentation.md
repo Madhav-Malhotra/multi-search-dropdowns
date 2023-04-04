@@ -82,6 +82,9 @@ Here is an example section value:
   - Note: dropdowns with multiple selections enabled autoselect all options. Dropdowns with multiple selections disabled autoselect the first option.
   - Note: if the above autoselect behaviours aren't what you're looking for, you can select whichever options you'd like with the `classInstance.setActiveOption()` method. 
 
+&nbsp;
+
+&nbsp;
 
 
 # State Field (Special)
@@ -117,38 +120,181 @@ Here is an example state value:
 ```
 
 1. The object contains a key for every section in `classInstance.sections`. Each key is a section ID specified in the `sectionID` fields of `classInstance.sections`. Each key has a nested object as its value. 
-    1. There is also a key called `dpd-updated`. It has a string value of the last dropdown id that was updated (specified in the `dropID` fields of `classInstance.sections`). 
-2. Each nested subobject contains data about the dropdowns in that section. Specifically, it has a 
+    1. There is also a key called `dpd-updated`. It has a string value of the last dropdown ID that was updated (specified in the `dropID` fields of `classInstance.sections`). 
+2. The nested object contains data about the dropdowns in that section. Specifically, it has a key for each dropdown ID in that section. Each key has an array as a value. 
+3. The array has an object for each option selected in the dropdown. This means single select dropdowns will have a maximum of one object in this array.
+    1. Each object has two fields: a `val` (the `innerText` of the option selected) and `id` (part of the `id` of the option selected). A third field `new` may be provided when a dropdown is first rendered and a value has been autoselected. 
+    2. Note that the html `id` attribute of each option selected is different from the `id` field above. The HTML `id` attribute has the following format: `${dropID}-dpd-option-${id}`. In other words, the `id` field specifies the changing part of the HTML `id` attribute for different options of a dropdown.
 
-# Public Fields (Other)
-#onStateUpdate = () => null;
+&nbsp;
 
-#rootDOM;
+&nbsp;
 
-#vertical = true;
+
+# Public Fields
+None
+
+&nbsp;
+
 
 # Public Methods
-init()
 
-modifySetting(id, key, val)
 
-pushSection(inputData)
+`init()`
 
-resetSection(sid, id)
+**Description**
 
-setActiveOption(sid, id, optionVals)
+- Renders the dropdowns to the parent specified in the `rootDOM` field.
+
+**Parameters**
+
+None, but this method relies on all fields. Especially be sure to initialise `rootDOM` and `sections` before calling this method.
+
+**Returns** 
+None
+
+-----
+
+`modifySetting(id, key, val)`
+
+**Description**
+
+- Adjusts a setting specified in the `sections` field.
+- **Warning: changes made in the sections field will not take effect unless you call the `resetSection()` method documented below.**
+
+**Parameters**
+
+- `id (type: string)`: a valid section ID to find the section to modify the setting of.
+- `key (type: string)`: a key in the sections objects to specify which setting to modify. 
+  - Valid keys are: `sectionID`, `sectionOrder`, `dropIDs`, `dropTitles`, `dropOrder`, `dropOptions`, `dropMulti`, `dropSearch`, and `dropInit`. See [the heading on the sections field](#sections-field-special) for more details.
+- `val (type: varies)`: the value to update the setting above. Could be a number, string, or array.
+ 
+
+**Returns** 
+None
+
+-----
+
+`pushSection(sectionObject)`
+
+**Description**
+
+- Adds a new section's settings to the `sections` field.
+
+**Parameters**
+
+- `sectionObject (type: object)`:  See [the heading on the sections field](#sections-field-special) for more details on the format of a valid object. 
+
+**Returns** 
+None
+
+-----
+
+`resetSection(sectionID, dropdownID)`
+
+**Description**
+
+- Re-renders the specified dropdown, section, or form. 
+- Usually, you'll call this method after you update a dropdown's settings. 
+
+**Parameters**
+
+- `sectionID (type: string, optional)`: a valid section ID to identify the section to re-render. If none is provided, all sections will be re-rendered.
+- `dropdownID (type: string, optional)`: a valid dropdown ID to identify the dropdown to re-render. If none is provided, but a `sectionID` is provided, all dropdowns in a section will be re-rendered.
+
+**Returns** 
+None
+
+-----
+
+`setActiveOption(sectionID, dropdownID, optionVals)`
+
+**Description**
+
+- Programmatically selects an option in the specified dropdown. 
+- **Useful to enable autofill behaviours**. 
+
+**Parameters**
+
+- `sectionID (type: string, optional)`: a valid section ID to identify the section containing the dropdown.
+- `dropdownID (type: string, optional)`: a valid dropdown ID to identify the dropdown to adjust options of.
+- `optionVals (type: array)`: an array of 0 or more strings that exactly match the `innerText` of the options dropdown to adjust. The string(s) will indicate the option(s) to select.
+
+**Returns** 
+None, though **any callback function specified in the `onStateUpdate` field will be called**.
+
+-----
+
+&nbsp;
+
+&nbsp;
+
 
 # Private Fields
-#expanded = {};
+`#onStateUpdate` (type: function):
+- A callback function to pass the `state` field to when selected dropdowns change. 
 
-#queries = {};
+`#rootDOM` (DOM Element):
+- A parent DOM element to house the dropdowns generated.
+- Warning: **all innerHTML of this element is cleared** when you initialise the dropdowns. Please ensure no other children are present/added to the passed DOM element. 
+- Warning: **the value you set to this field is not validated. Any bugs due to incorrect values are your responsibility.**
 
-#ignoreBlur;
+`#vertical` (type: boolean, default true):
+- If multiple dropdowns are present, whether to put one dropdown on top of the other instead of side to side.
+
+`#expanded` (type: object):
+- This isn't a field for class users to interact with. It's used internally to track which dropdowns are expanded (have their options showing).
+
+`#queries` (type: object):
+- This isn't a field for class users to interact with. It's used internally to track searches in searchable dropdowns.
+
+`#ignoreBlur` (type: boolean):
+- This isn't a field for class users to interact with. It's used internally to over-ride blur events when a user interacts with dropdown options.
+
+&nbsp;
+
+&nbsp;
 
 # Private Methods
-#makeSection(form, sectionData, provided)
+This documentation is left to help in fixing bugs. **There may be bugs on searchable mobile dropdowns**.
 
-#makeSubsection(section, sectionData, order, provided)
+Methods related to rendering the dropdown:
+
+`#makeSection(form, sectionData, existing)`
+
+**Description**
+
+- Internal method called by `init()`. Creates DOM elements related to each section of the form. 
+
+**Parameters**
+
+- `form (type: DOM element)`: The parent form to append the section to.
+- `sectionData (type: object)`: An object with settings for the current section.
+- `existing (type: DOM element)`: An existing section div. Used when resetting specific sections, so existing divs aren't over-written.
+
+**Returns** 
+None
+
+-----
+
+`#makeSubsection(section, sectionData, order, existing)`
+
+**Description**
+
+- Internal method called by `makeSection()`. Creates DOM elements to wrap each dropdown in. 
+
+**Parameters**
+
+- `section (type: DOM element)`: A parent section div to append dropdown wrappers to.
+- `sectionData (type: object)`: An object with settings for the current section.
+- `order (type: Number)`: The order that the dropdown will be displayed in.
+- `existing (type: array)`: Array with an existing subsection DOM element and dropdown index. Used when resetting specific dropdowns, so existing subsection dropdown wrappers aren't overwritten.
+
+
+**Returns** 
+None
+
+-----
 
 #makeComboListBox(subsection, sectionData, j)
 
@@ -158,9 +304,7 @@ setActiveOption(sid, id, optionVals)
 
 #makeOptions(wrapper, optionArr, id, initAllSelected = true)
 
-#multiStateUpdateHelper(sid, id, i, addState)
-
-#appearanceChangesHelper(wrapper, combo, sid, id)
+Event handler methods:
 
 #focusOption(i, id, combo, prev)
 
@@ -175,3 +319,9 @@ setActiveOption(sid, id, optionVals)
 #onComboType(id, combo)
 
 #onPointerUp(e)
+
+Helper methods:
+
+#multiStateUpdateHelper(sid, id, i, addState)
+
+#appearanceChangesHelper(wrapper, combo, sid, id)
