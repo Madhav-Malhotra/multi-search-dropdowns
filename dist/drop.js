@@ -63,14 +63,14 @@ function filterOptions(arr, query) {
   return out;
 }
 
-function key2Action(key, dropExpanded, searchAllowed) {
+function key2Action(keyEvent, dropExpanded, searchAllowed) {
   /* 
   Maps key event to action to perform 
   
   Parameters
   ---------------------
-  key (type: String)
-  - Event.key property from keypress event. 
+  keyEvent (type: DOM Event)
+  - Used to get properties from key press event event. 
   dropExpanded (type: Boolean)
   - Whether the dropdown is currently expanded.
   searchAllowed (type: Boolean)
@@ -81,6 +81,15 @@ function key2Action(key, dropExpanded, searchAllowed) {
   type: int
   - A code reperenting the action to perform
   */
+  
+  let key = keyEvent.key;
+  const nonSymbolKeys = ['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Backspace', 
+    'Clear']
+  if (!nonSymbolKeys.includes(key) && key.length !== 1) {
+    key = keyEvent.currentTarget.value;
+    if (!key) return;
+    key = key.slice(key.length - 1);
+  };
 
 
   // Expand dropdown
@@ -201,6 +210,12 @@ export class Dropdown {
   #rootDOM;
   #sections = [];
   #vertical = true;
+  #controlLabels = {
+    'select': 'Select all', 
+    'deselect': 'Deselect all', 
+    'search': 'Type to search',
+    'numSelect': 'options selected'
+  };
   state = {};
   
   // Declare other fields.
@@ -214,6 +229,7 @@ export class Dropdown {
   get sections() { return this.#sections; }
   get state() { return this.state; }
   get vertical() { return this.#vertical; }
+  get controlLabels() { return this.#controlLabels; }
   
   // Setter methods
   set rootDOM(domEl) {
@@ -244,9 +260,16 @@ export class Dropdown {
     if (typeof inputBool === typeof true) this.#vertical = inputBool;
     else console.error('inputBool must be a Boolean value');
   }
-  
-  // Implicit default constructor
-  // (Avoid init with too many params. Confusing)
+  set controlLabels(inputArr) {
+    if (Array.isArray(inputArr) && inputArr.length === 4) {
+      this.#controlLabels = {
+        'select': inputArr[0], 
+        'deselect': inputArr[1], 
+        'search': inputArr[2],
+        'numSelect': inputArr[3]
+      };
+    } else console.error("controlLabels must be an array of four strings: alternative labels for the 'Select all' button, 'Deselect all' button, 'Type to search options' placeholder, and 'NUM options selected' placeholder.")
+  }
   
   // Builder Methods
   init() {
@@ -371,12 +394,17 @@ export class Dropdown {
       label.innerText = sectionData['dropTitles'][j];
       label.id = `${sectionData['dropIDs'][j]}-dpd-label`;
       label.className = 'dpd-label';
+      label.setAttribute('for', `${sectionData['dropIDs'][j]}-dpd-combobox`);
       subsection.appendChild(label);
       
       // Wrap current dropdown and label in a convenient container
       subsection.className = 'dpd-section-group';
       subsection.dataset.order = sectionData['dropOrder'][j];
       subsection.dataset.name = sectionData['dropIDs'][j];
+      if (sectionData['disabled'] && sectionData['disabled'][j]) {
+        subsection.disabled = true;
+        subsection.setAttribute('aria-disabled', true);
+      }
       
       // Make combobox
       this.#makeComboListBox(subsection, sectionData, j);
@@ -437,7 +465,7 @@ export class Dropdown {
     list.setAttribute('aria-labelledby', `${id}-dpd-label`);
     list.setAttribute('tabindex', -1);
     
-    list.onblur = (e) => {
+    list.onblur = () => {
       if (wrapper.dataset.multi) {
         this.#managePopup(sid, id, combo, false, false);
       }
@@ -457,9 +485,14 @@ export class Dropdown {
     // Default to first el selected (unless multiselect)
     combo.innerText = sectionData['dropOptions'][j][0];
     if (combo.parentNode.dataset.multi && initSelected) 
-      combo.innerText = `${sectionData['dropOptions'][j].length} options selected`;
+      combo.innerText = 
+        `${sectionData['dropOptions'][j].length} ${this.controlLabels['numSelect']}`;
     else if (!initSelected) 
-      combo.innerText = `0 options selected`;
+      combo.innerText = `0 ${this.controlLabels['numSelect']}`;
+      
+      
+    // Check if disabled
+    const disabled = sectionData['disabled'] && sectionData['disabled'][j];
 
     // Adjust combobox (ARIA)
     this.#expanded[id] = false;
@@ -468,14 +501,20 @@ export class Dropdown {
     combo.setAttribute('aria-haspopup', 'listbox');
     combo.setAttribute('aria-labelledby', `${id}-dpd-label`);
     combo.setAttribute('role', 'combobox');
-    combo.setAttribute('tabindex', 0);
+    combo.setAttribute('tabindex', disabled ? -1 : 0);
+    if (disabled) {
+      combo.disabled = true;
+      combo.setAttribute('aria-disabled', 'true');
+    }
     
     // Adjust combobox (event handlers)
-    combo.addEventListener('blur', this.#onComboBlur.bind(this));
-    combo.addEventListener('keydown', this.#onComboKeyDown.bind(this));
-    combo.addEventListener('click', () => {
-      this.#managePopup(sid, id, combo, !this.open, false);
-    });
+    if (!disabled) {
+      combo.addEventListener('blur', this.#onComboBlur.bind(this));
+      combo.addEventListener('keyup', this.#onComboKeyUp.bind(this));
+      combo.addEventListener('click', () => {
+        this.#managePopup(sid, id, combo, !this.open, false);
+      });
+    }
   }
   
   #makeComboSearch(combo, sid, id, sectionData, j) {
@@ -487,7 +526,17 @@ export class Dropdown {
     search.id = `${id}-dpd-combobox`;
     search.className = 'dpd-combo';
     search.type = 'text';
-    search.placeholder = 'Type to search options';
+    search.placeholder = this.#controlLabels['search'];
+    
+    // check if disabled
+    const disabled = sectionData['disabled'] && sectionData['disabled'][j];
+    if (disabled) {
+      search.disabled = true;
+      search.setAttribute('aria-disabled', true);
+      search.setAttribute('tabIndex', -1);
+      combo.disabled = true;
+      combo.setAttribute('aria-disabled', true);
+    }
     
     // Adjust search (ARIA)
     this.#expanded[id] = false;
@@ -498,14 +547,16 @@ export class Dropdown {
     search.setAttribute('aria-autocomplete', 'list');
     
     // Adjust search (event listeners)
-    search.addEventListener('blur', this.#onComboBlur.bind(this));
-    search.addEventListener('keydown', this.#onComboKeyDown.bind(this));
-    search.addEventListener('click', () => {
-      this.#managePopup(sid, id, search, !this.open, false);
-    });
-    search.addEventListener('focus', () => {
-      this.#managePopup(sid, id, search, true, false);
-    });
+    if (!disabled) {
+      search.addEventListener('blur', this.#onComboBlur.bind(this));
+      search.addEventListener('keyup', this.#onComboKeyUp.bind(this));
+      search.addEventListener('click', () => {
+        this.#managePopup(sid, id, search, !this.open, false);
+      });
+      search.addEventListener('focus', () => {
+        this.#managePopup(sid, id, search, true, false);
+      });
+    }
     
     // Turn combobox into container that will house searchbar
     combo.className = 'dpd-search-group';
@@ -544,7 +595,8 @@ export class Dropdown {
     
     // Special all option for multiple selectors only
     if (multi) {
-      optionArr = ['Select all', 'Unselect all', ...optionArr]
+      optionArr = [this.#controlLabels['select'], this.#controlLabels['deselect'], 
+        ...optionArr];
     }
     
     
@@ -778,6 +830,7 @@ export class Dropdown {
       `.dpd-section[data-name="${sid}"] #${id}-dpd-listbox .dpd-option`);
     const combo = this.#rootDOM.querySelector(
       `.dpd-section[data-name="${sid}"] #${id}-dpd-combobox`);
+    optionVals = optionVals.map(option => option.toLowerCase());
     
     if (options.length) {
       this.state[sid][id] = [];
@@ -791,7 +844,8 @@ export class Dropdown {
         options.forEach(o => {
           if (o.getAttribute('aria-selected') === 'true') active += 1;
         });
-        if (active != 1) combo.innerText = `${active} options selected`;
+        if (active != 1) combo.innerText = 
+          `${active} ${this.controlLabels['numSelect']}`;
       }
       
       this.#managePopup(sid, id, combo, false, false);
@@ -800,7 +854,7 @@ export class Dropdown {
     
     for (let o of options) {
       // sets matching options to checked
-      if (optionVals.includes(o.dataset.name)) {
+      if (optionVals.includes(o.dataset.name.toLowerCase())) {
         o.click();
         
         setTimeout(() => {
@@ -858,16 +912,14 @@ export class Dropdown {
     }
     
     // Update combo text
-    let modifyAttr = combo.tagName === 'DIV' ? 'innerText' : 'value';
-    const multisearch = wrapper.dataset.multi && wrapper.dataset.search;
+    let modifyAttr = combo.tagName === 'DIV' ? 'innerText' : 'placeholder';
     const message = (this.state[sid][id].length == 1) ? 
       this.state[sid][id][0].val :
-      `${this.state[sid][id].length} options selected`;
+      `${this.state[sid][id].length} ${this.controlLabels['numSelect']}`;
     
-    if (!multisearch) combo[modifyAttr] = message;
-    else combo.placeholder = message;
-    
-    if (modifyAttr === 'value') this.#queries[id] = combo[modifyAttr];
+    combo[modifyAttr] = message;
+    if (wrapper.dataset.search && !wrapper.dataset.multi) combo.value = '';
+    if (modifyAttr === 'placeholder') this.#queries[id] = combo.value;
   }
   
   // Helper methods (event listeners)
@@ -1073,7 +1125,7 @@ export class Dropdown {
     }
   }
   
-  #onComboKeyDown(e) {
+  #onComboKeyUp(e) {
     /* Responds to key press inputs in combobox. */
     
     // Get data about combobox. 
@@ -1081,7 +1133,7 @@ export class Dropdown {
       = this.#getComboProps(e, true);
 
     // Get key event and index of next element to be selected 
-    const action = key2Action(e.key, expanded, searchable);
+    const action = key2Action(e, expanded, searchable);
     const newIndex = getNewIndex(active, max, action);
 
     // Make changes based on event 
@@ -1154,7 +1206,7 @@ export class Dropdown {
   }
   
   #selectAllMulti(selected, wrapper, combo, sid, id) {
-    /* Handles clicks on the Select all/Unselect all buttons */
+    /* Handles clicks on the Select all/Deselect all buttons */
     
     // Reset state
     this.state[sid][id] = [];
@@ -1177,7 +1229,7 @@ export class Dropdown {
         'val': o.innerText
       };
       
-      if (selected.innerText === 'Select all') 
+      if (selected.innerText === this.#controlLabels['select'])
         this.#multiStateUpdateHelper(sid, id, i, addState);
     }
     
@@ -1195,7 +1247,7 @@ export class Dropdown {
   }
   
   #getComboProps(e, extended=false) {
-    /* Helper function used by onComboBlur and onComboKeyDown */
+    /* Helper function used by onComboBlur and onComboKeyUp */
     
     // Get basic data about section that combo is in
     const id = e.target.id.split('-')[0];

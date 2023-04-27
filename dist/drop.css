@@ -38,6 +38,10 @@ div.dpd-invisible {
   display: none;
 }
 
+div.dpd-section-group[aria-disabled="true"] {
+  opacity: 0.5;
+}
+
 .dpd-accessible-selector {
   display: block;
   margin-bottom: 1.5em;
@@ -61,7 +65,7 @@ div.dpd-invisible {
 }
 
 .dpd-combo {
-  background-color: #f5f5f5;
+  background-color: #fafafa;
   border: 2px solid rgb(0 0 0 / 75%);
   border-radius: 4px;
   display: block;
@@ -82,6 +86,16 @@ div.dpd-invisible {
   outline: 4px solid transparent;
 }
 
+div.dpd-combo[aria-disabled="true"]:focus {
+  border-color: rgb(0 0 0 / 75%);
+  outline: none;
+  box-shadow: none;
+}
+
+.dpd-combo:disabled {
+  color: #333;
+}
+
 .dpd-section-header {
   font-size: 20px;
   font-weight: bold;
@@ -95,7 +109,7 @@ div.dpd-invisible {
 }
 
 .dpd-listbox {
-  background-color: #f5f5f5;
+  background-color: #fafafa;
   border: 1px solid rgb(0 0 0 / 75%);
   border-radius: 0 0 4px 4px;
   display: none;
@@ -116,6 +130,7 @@ div.dpd-invisible {
 
 .dpd-option  {
   padding: 10px 12px 12px;
+  overflow-wrap: break-word;
 }
 
 .dpd-option:hover {
@@ -153,4 +168,36 @@ div.dpd-invisible {
 
 .dpd-option.dpd-option-select-all {
   font-weight: bold;
+}
+
+@media only screen and (max-width: 425px) {
+  .dpd-section-group {
+    flex-grow: inherit;
+  }
+  
+  .dpd-combo {
+    font-size: 0.875em;
+    min-height: calc(0.875em + 18px);
+    padding: 8px 38px 10px 12px;
+  }
+  
+  .dpd-option {
+    font-size: 0.875em;
+    line-height: 1.5em;
+  }
+  
+  #colourBtn,
+  .single-graph-container button {
+    width: 100%;
+  }
+  
+  .single-graph-container button {
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .graphBox {
+    border-left: none;
+    border-right: none;
+  }
 }
