@@ -56,7 +56,8 @@ Here is an example section value:
         ],
         "dropMulti": [false, false, true, false],
         "dropSearch": [false, false, false, false], 
-        "dropInit": [true, true, true, true]
+        "dropInit": [true, true, true, true],
+        "disabled": [true, true, true, false]
     }
 ] 
 ```
@@ -67,13 +68,15 @@ Here is an example section value:
 - `sectionOrder (type: number)`: a number greater than 0 is required. 
   - Think of this as the index of a section in an array. The 0th section will be shown first, then the 1st section, then the 2nd, and so on. 
   - Before the next section is shown, the user must pick a value for a dropdown in the last section. 
-  - Duplicate values mean that multiple sections will show at the same time. This is equivalent to default behaviour (no form section logic is applied).
+  - Duplicate section indices mean that multiple sections will show at the same time.
+    - Setting all sectionOrder fields to 0 immediately shows all sections  (no conditional display logic).
 - `dropIDs (type: array)`: 1+ unique string values are required. The number of strings determine the number of dropdowns. They will set the ids of the divs housing each dropdown.
 - `dropTitles (type: array)`: 1+ string values are required. The length of this array must be the same as `dropIDs`. Each string will set the label of each dropdown. 
 - `dropOrder (type: array)`: 1+ number values greater than 0 are required. The length of this array must be the same as `dropIDs`.
   - Think of this as the index of a dropdown in an array. The 0th dropdown will be shown first, then the 1st dropdown, then the 2nd, and so on. 
   - Before the next dropdown is shown, the user must pick a value for the current dropdowns. 
-  - Duplicate values mean that multiple dropdowns will show at the same time. This is equivalent to default behaviour (no form section logic is applied).
+  - Duplicate values mean that multiple dropdowns will show at the same time. 
+    - Setting all dropOrder fields to 0 immediately shows all sections  (no conditional display logic).
 - `dropOptions (type: array of arrays)`: this array must contain 1+ nested subarrays. The length of this array must be the same as `dropIDs`. 
   - The array has a nested subarray for each dropdown. Each nested subarray contains strings showing dropdown options.
 - `dropMulti (type: array)`: 1+ boolean values are required. The length of this array must be the same as `dropIDs`. Each boolean will determine if multiple selections are allowed in each dropdown.
@@ -81,6 +84,7 @@ Here is an example section value:
 - `dropInit (type: array)`: 1+ boolean values are required. The length of this array must be the same as `dropIDs`. Each boolean will determine if each dropdown autoselects an option on render.
   - Note: dropdowns with multiple selections enabled autoselect all options. Dropdowns with multiple selections disabled autoselect the first option.
   - Note: if the above autoselect behaviours aren't what you're looking for, you can select whichever options you'd like with the `classInstance.setActiveOption()` method. 
+- `disabled (type: array)`: 1+ boolean values are required. The length of this array must be the same as `dropIDs`. Each boolean will determine if each drop down is disabled.
 
 &nbsp;
 
@@ -166,7 +170,7 @@ None
 
 - `id (type: string)`: a valid section ID to find the section to modify the setting of.
 - `key (type: string)`: a key in the sections objects to specify which setting to modify. 
-  - Valid keys are: `sectionID`, `sectionOrder`, `dropIDs`, `dropTitles`, `dropOrder`, `dropOptions`, `dropMulti`, `dropSearch`, and `dropInit`. See [the heading on the sections field](#sections-field-special) for more details.
+  - Valid keys are: `sectionID`, `sectionOrder`, `dropIDs`, `dropTitles`, `dropOrder`, `dropOptions`, `dropMulti`, `dropSearch`, `dropInit`, and `disabled`. See [the heading on the sections field](#sections-field-special) for more details.
 - `val (type: varies)`: the value to update the setting above. Could be a number, string, or array.
  
 
@@ -234,13 +238,13 @@ None, though **any callback function specified in the `onStateUpdate` field will
 `#onStateUpdate` (type: function):
 - A callback function to pass the `state` field to when selected dropdowns change. 
 
-`#rootDOM` (DOM Element):
+`#rootDOM` (type: DOM Element):
 - A parent DOM element to house the dropdowns generated.
 - Warning: **all innerHTML of this element is cleared** when you initialise the dropdowns. Please ensure no other children are present/added to the passed DOM element. 
 - Warning: **the value you set to this field is not validated. Any bugs due to incorrect values are your responsibility.**
 
 `#vertical` (type: boolean, default true):
-- If multiple dropdowns are present, whether to put one dropdown on top of the other instead of side to side.
+- Whether to put dropdowns/sections on top of each other or side to side.
 
 `#expanded` (type: object):
 - This isn't a field for class users to interact with. It's used internally to track which dropdowns are expanded (have their options showing).
@@ -256,9 +260,13 @@ None, though **any callback function specified in the `onStateUpdate` field will
 &nbsp;
 
 # Private Methods
-This documentation is left to help in fixing bugs. **There may be bugs on searchable mobile dropdowns**.
+This documentation is left to help in fixing bugs. **This class has not been extensively tested on mobile**.
+
+&nbsp;
 
 Methods related to rendering the dropdown:
+
+--------
 
 `#makeSection(form, sectionData, existing)`
 
@@ -296,15 +304,73 @@ None
 
 -----
 
-#makeComboListBox(subsection, sectionData, j)
+`#makeComboListBox(subsection, sectionData, j)`
 
-#makeComboNormal(combo, sid, id, sectionData, j, initSelected = true)
+**Description**
+- Helper method used by `makeSubsection()` to initialise accessible combobox and listbox. 
+    
+**Parameters**
+- `subsection (type: DOM Element)`: Parent container to house combobox/listbox in. 
+- `sectionData (type: Object)`: An object with settings for the current section.
+- `j (type: Number)`: Index to identify dropdown being created (out of all drops in subsection).
 
-#makeComboSearch(combo, sid, id, sectionData, j)
+**Returns** None
 
-#makeOptions(wrapper, optionArr, id, initAllSelected = true)
+-----
+
+`#makeComboNormal(combo, sid, id, sectionData, j, initSelected)`
+
+**Description**
+- Helper method used by `makeComboListBox()` to initialise a combo box without search capabilities.
+
+**Parameters**
+- `combo (type: DOM Element)`: Div to house combo box in.
+- `sid (type: string)`: Id of section that current combo box is in.
+- `id (type: string)`: Id of parent dropdown. 
+- `sectionData (type: object)`: An object with settings for the current section. 
+- `j (type: number)`: The index of the current dropdown settings in arrays within the `classInstance.sections` field. 
+- `initSelected (type: boolean, default: true)`: Whether to auto select options in the drop down on initialization.
+
+**Returns** None
+
+-----
+
+`#makeComboSearch(combo, sid, id, sectionData, j)`
+
+**Description**
+- Helper method used by `makeComboListBox()` to initialise a combo box with search capabilities.
+
+**Parameters**
+- `combo (type: DOM Element)`: Div to house combo box in.
+- `sid (type: string)`: Id of section that current combo box is in.
+- `id (type: string)`: Id of parent dropdown. 
+- `sectionData (type: object)`: An object with settings for the current section. 
+- `j (type: number)`: The index of the current dropdown settings in arrays within the `classInstance.sections` field. 
+
+**Returns** None
+
+-----
+
+`#makeOptions(wrapper, optionArr, id, initAllSelected)`
+
+**Description**
+- Helper method used by `makeComboListBox()` to append options to listbox. 
+    
+**Parameters**
+- `wrapper (type: DOM Element)`: Container housing listbox and combobox. 
+- `optionArr (type: Array)`: String values for each option in the listbox. 
+- `id (type: string)`: ID to identify the current dropdown. 
+- `initAllSelected (type: boolean, default: true)`: whether to initialise the list box with some options autoselected. 
+  - For a single select list box, the first option will be autoselected.
+  - For a multi select list box, all options will be autoselected.
+
+**Returns** None
+
+&nbsp;
 
 Event handler methods:
+
+-------
 
 #focusOption(i, id, combo, prev)
 
@@ -320,8 +386,12 @@ Event handler methods:
 
 #onPointerUp(e)
 
-Helper methods:
+&nbsp;
 
-#multiStateUpdateHelper(sid, id, i, addState)
+Helper methods (and functions):
+
+--------
+
+`#multiStateUpdateHelper(sid, id, i, addState)`
 
 #appearanceChangesHelper(wrapper, combo, sid, id)
