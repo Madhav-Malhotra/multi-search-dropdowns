@@ -1,3 +1,12 @@
+# Contents
+- [Sections field](#sections-field-special) to initialise dropdown settings.
+- [State field](#state-field-special) to view dropdown selections.
+- [Public methods](#public-methods) to update dropdown settings.
+- [Private fields](#private-fields) to check dropdown settings.
+- [Private methods](#private-methods) mentioned for debugging purposes.
+
+&nbsp;
+
 # Sections Field (Special)
 
 `classInstance.sections (array of objects)`
@@ -365,33 +374,3 @@ None
   - For a multi select list box, all options will be autoselected.
 
 **Returns** None
-
-&nbsp;
-
-Event handler methods:
-
--------
-
-#focusOption(i, id, combo, prev)
-
-#selectOption(i, sid, id, combo) 
-
-#managePopup(sid, id, combo, expanded, callFocus = true) 
-
-#onComboBlur(e)
-
-#onComboKeyDown(e)
-
-#onComboType(id, combo)
-
-#onPointerUp(e)
-
-&nbsp;
-
-Helper methods (and functions):
-
---------
-
-`#multiStateUpdateHelper(sid, id, i, addState)`
-
-#appearanceChangesHelper(wrapper, combo, sid, id)
